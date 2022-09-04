@@ -1,21 +1,27 @@
-#ifndef SERVER_H
-#define SERVER_H
+#pragma once
 
 #include <QWidget>
+#include <QTcpSocket>
+#include <QLineEdit>
+#include <QTextEdit>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class Server; }
-QT_END_NAMESPACE
 
-class Server : public QWidget
+
+class Client : public QWidget
 {
     Q_OBJECT
 
 public:
-    Server(QWidget *parent = nullptr);
-    ~Server();
+    Client(const QString &str,int port,QWidget *parent = nullptr);
 
 private:
-    Ui::Server *ui;
+    QTcpSocket *socket;
+    QTextEdit *txt_t;
+    QLineEdit *line_t;
+    quint16 BlockNext;
+
+public slots:
+    void SendToServer();
+    void newConnection();
+    void readReady();
 };
-#endif // SERVER_H

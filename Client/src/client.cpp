@@ -17,11 +17,11 @@ Client::Client(const QString &str,int port,QWidget *parent)
 
     QPushButton *cmd=new QPushButton("&send");
 
-    connect(cmd,SIGNAL(clicked()),this,SLOT(SendToServer()));
-    connect(line_t,SIGNAL(returnPressed()),this,SLOT(SendToServer()));
-
     txt_t=new QTextEdit;
     line_t=new QLineEdit;
+        
+    connect(cmd,SIGNAL(clicked()),this,SLOT(SendToServer()));
+    connect(line_t,SIGNAL(returnPressed()),this,SLOT(SendToServer()));
 
     txt_t->setReadOnly(true);
 

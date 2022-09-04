@@ -1,15 +1,87 @@
-#include "server.h"
-#include "ui_server.h"
+#include "client.h"
 
-Server::Server(QWidget *parent)
-    : QWidget(parent)
-    , ui(new Ui::Server)
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QTime>
+
+Client::Client(const QString &str,int port,QWidget *parent)
+    : QWidget(parent),BlockNext(0)
 {
-    ui->setupUi(this);
+    socket=new QTcpSocket(this);
+
+    socket->connectToHost(str,port);
+
+    connect(socket,SIGNAL(connected()),this,SLOT(newConnection()));
+    connect(socket,SIGNAL(readyRead()),this,SLOT(readReady()));
+
+    QPushButton *cmd=new QPushButton("&send");
+
+    connect(cmd,SIGNAL(clicked()),this,SLOT(SendToServer()));
+    connect(line_t,SIGNAL(returnPressed()),this,SLOT(SendToServer()));
+
+    txt_t=new QTextEdit;
+    line_t=new QLineEdit;
+
+    txt_t->setReadOnly(true);
+
+    QVBoxLayout *layout=new QVBoxLayout;
+
+    layout->addWidget(new QLabel("<H1>Client<H1>"));
+    layout->addWidget(txt_t);
+    layout->addWidget(line_t);
+    layout->addWidget(cmd);
+
+
+    setLayout(layout);
 }
 
-Server::~Server()
+void Client::SendToServer()
 {
-    delete ui;
+    QByteArray bit;
+    QDataStream out(&bit,QIODevice::WriteOnly);
+    out.setVersion(QDataStream::Qt_6_2);
+
+    out<<quint16(0)<<QTime::currentTime()<<line_t->text();
+    out.device()->seek(0);
+    out<<quint16(bit.size()-sizeof(quint16));
+
+    socket->write(bit);
+    line_t->setText(" ");
 }
 
+void Client::newConnection()
+{
+    txt_t->append(" ");
+
+}
+
+void Client::readReady()
+{
+    QDataStream in(socket);
+    in.setVersion(QDataStream::Qt_6_2);
+
+    for(;;)
+    {
+        if(!BlockNext)
+        {
+            if(socket->bytesAvailable()<sizeof(quint16)){
+                break;
+            }
+
+            in>>BlockNext;
+        }
+
+        if(socket->bytesAvailable()<BlockNext){
+            break;
+        }
+
+        QTime time;
+        QString str;
+        in>>time>>str;
+
+        txt_t->append(time.toString()+""+str);
+
+        BlockNext=0;
+    }
+}
